@@ -9,6 +9,11 @@ ARG RUBY_PASSENGER=2.4-xenial
 FROM instructure/ruby-passenger:$RUBY_PASSENGER
 ARG POSTGRES_VERSION=9.5
 
+# use the same uid,gid from the instructure/core image as the defaults
+# for the docker user but let it be overridable with build args
+ARG uid=9999
+ARG gid=9999
+
 ENV APP_HOME /usr/src/app/
 ENV RAILS_ENV "production"
 ENV NGINX_MAX_UPLOAD_SIZE 10g
@@ -16,6 +21,14 @@ ENV YARN_VERSION 1.19.1-1
 
 USER root
 WORKDIR /root
+
+# update user and group with the given uid and gid
+RUN userdel docker \
+  && groupadd -o --gid ${gid} docker \
+  && useradd --uid ${uid} --gid ${gid} --no-log-init docker \
+  && chown -R docker:docker /usr/src /home/docker \
+  && echo "docker user updated to match host user"
+
 RUN curl -sL https://deb.nodesource.com/setup_10.x | bash - \
   && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
   && echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list \

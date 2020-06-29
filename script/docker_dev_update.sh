@@ -46,7 +46,7 @@ else
 fi
 
 [[ -z "$SKIP_CODE" ]] && ./script/canvas_update -n data
-[[ -z "$SKIP_BUILD" ]] && docker-compose build --pull
+[[ -z "$SKIP_BUILD" ]] && docker-compose build --pull --build-arg uid="$(id -u)" --build-arg gid="$(id -g)"
 if [[ -z "$SKIP_BUILD" ]] ; then
   # assets are currently compiled during dc build --pull
   docker-compose run --rm web ./script/canvas_update -n code -n assets

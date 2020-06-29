@@ -134,7 +134,12 @@ function start_dinghy_vm {
 }
 
 function start_docker_daemon {
-  service docker status &> /dev/null && return 0
+  if [ -x "$(command -v service)" ]; then
+    service docker status &> /dev/null && return 0
+  else
+    systemctl status docker &> /dev/null && return 0
+  fi
+ 
   prompt 'The docker daemon is not running. Start it? [y/n]' confirm
   [[ ${confirm:-n} == 'y' ]] || return 1
   sudo service docker start
@@ -190,8 +195,12 @@ function setup_docker_environment {
     message "It looks like you're using Linux. You'll need dory. Let's set that up."
     start_docker_daemon
     setup_docker_as_nonroot
-    install_dory
-    start_dory
+    if [[ $SKIP_DORY != 'true' ]]; then
+      install_dory
+      start_dory
+    else
+      docker network create nginx-le-proxy_net || echo "It looks like the nginx-le-proxy_net network already exists."
+    fi
   fi
   if [ -f "docker-compose.override.yml" ]; then
     message "docker-compose.override.yml exists, skipping copy of default configuration"
@@ -208,7 +217,7 @@ function copy_docker_config {
 
 function build_images {
   message 'Building docker images...'
-  docker-compose build --pull
+  docker-compose build --pull --build-arg uid="$(id -u)" --build-arg gid="$(id -g)"
 }
 
 function check_gemfile {

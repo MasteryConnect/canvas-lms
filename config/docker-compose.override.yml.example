@@ -1,5 +1,5 @@
 # See doc/docker/README.md or https://github.com/instructure/canvas-lms/tree/master/doc/docker
-version: '2'
+version: '3'
 services:
   jobs: &BASE
     build:
@@ -55,8 +55,13 @@ services:
     <<: *BASE
     environment:
       <<: *BASE-ENV
-      VIRTUAL_HOST: .canvas.docker
+      VIRTUAL_HOST: ${CANVAS_VIRTUAL_HOST:-canvas.docker}
+      VIRTUAL_PORT: 8088
+      LETSENCRYPT_HOST: ${CANVAS_VIRTUAL_HOST}
       HTTPS_METHOD: noredirect
+    networks:
+      - default
+      - nginx-le-proxy_net
 
   postgres:
     volumes:
@@ -110,3 +115,7 @@ volumes:
   translations: {}
   yardoc: {}
   yarn-cache: {}
+
+networks:
+  nginx-le-proxy_net:
+    external: true
